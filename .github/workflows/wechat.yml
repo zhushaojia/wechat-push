@@ -25,15 +25,19 @@ jobs:
           echo "URL=$FULL_URL" >> $GITHUB_ENV
 
       - name: Check duplicate
-        id: check
         run: |
-          LAST_URL=$(cat last_url.txt)
+          if [ -f last_url.txt ]; then
+            LAST_URL=$(cat last_url.txt)
+          else
+            LAST_URL=""
+          fi
 
           if [ "$LAST_URL" = "$URL" ]; then
             echo "DUPLICATE=true" >> $GITHUB_ENV
           else
             echo "DUPLICATE=false" >> $GITHUB_ENV
           fi
+
 
       - name: Push to WeChat
         if: env.DUPLICATE == 'false'
