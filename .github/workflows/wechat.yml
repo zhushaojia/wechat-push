@@ -1,0 +1,33 @@
+name: WeChat MP Push
+
+on:
+  schedule:
+    - cron: '0 1 * * *'   # 每天 9 点（UTC+8）
+  workflow_dispatch:
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch latest article
+        run: |
+          curl -s "https://mp.weixin.qq.com/mp/profile_ext?action=home&__biz=MjM5MDYyMDMyNA==&scene=124" > page.html
+
+          TITLE=$(grep -oP '"title":"\K[^"]+' page.html | head -n 1)
+          URL=$(grep -oP '"content_url":"\K[^"]+' page.html | head -n 1 | sed 's/\\u0026/&/g')
+
+          echo "TITLE=$TITLE" >> $GITHUB_ENV
+          echo "URL=https://mp.weixin.qq.com$URL" >> $GITHUB_ENV
+
+      - name: Push to WeChat
+        run: |
+          curl -X POST "$WEBHOOK" \
+          -H "Content-Type: application/json" \
+          -d "{
+            \"msgtype\": \"text\",
+            \"text\": {
+              \"content\": \"【中税网更新】\n${TITLE}\n${URL}\"
+            }
+          }"
+        env:
+          WEBHOOK: ${{ secrets.WEBHOOK }}
